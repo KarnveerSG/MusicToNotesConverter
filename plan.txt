@@ -1,0 +1,257 @@
+Goal: Design a desktop application for Windows that processes audio files.
+
+Context: The user wants an application that can take an MP3 or other audio file as input. The application should perform three primary functions:
+1.  Generate a transcript of the audio, presented as subtitles.
+2.  Convert the entire audio file into musical notation.
+3.  Simulate various musical instruments playing the generated musical notation within the application.
+
+Desired Functionality & Features:
+*   Modern and smooth user interface.
+*   All necessary features expected of such an audio processing and music generation application.
+
+Constraints:
+*   Platform: Windows desktop application.
+
+Output: A detailed concept and feature list for this application.
+
+================================================================================
+EXPANDED CONCEPT & FEATURE LIST
+================================================================================
+
+## Application Name (working)
+MusicToNotesConverter — audio → transcript + sheet music + instrument playback
+
+## Core Pipeline
+```
+[Audio File] → [Preprocess] → [Parallel Analysis]
+                                    ├─ Speech-to-Text → Subtitles (SRT/VTT)
+                                    └─ Audio-to-MIDI → Notation → Instrument Render
+```
+
+### Stage 1: Import & Preprocess
+- Drag-and-drop or file picker for audio import
+- Supported formats: MP3, WAV, FLAC, OGG, M4A, AAC
+- Normalize loudness, resample to model-friendly rate (e.g. 16 kHz for STT, 22 kHz for pitch)
+- Waveform + spectrogram visualization
+- Optional trim/crop region before processing
+- Metadata display: duration, sample rate, channels, bitrate
+
+### Stage 2: Transcription (Subtitles)
+- Offline speech-to-text via Whisper (local, no cloud dependency)
+- Word-level timestamps for karaoke-style sync
+- Language auto-detect + manual override
+- Subtitle editor: fix words, adjust timing, split/merge cues
+- Export: SRT, VTT, plain text
+- Burn-in preview overlay on waveform timeline
+- Speaker diarization (optional, phase 2): label who spoke when
+
+### Stage 3: Audio → Musical Notation
+- Pitch detection + note segmentation (Basic Pitch, CREPE, or similar)
+- Polyphonic support where feasible; fallback to melody-only for dense mixes
+- Key signature + time signature detection (or user override)
+- Tempo (BPM) detection with beat grid overlay
+- Quantization slider: loose (human feel) ↔ tight (grid-locked)
+- Output as staff notation (treble/bass clef auto or manual)
+- Dual view: traditional sheet music + piano roll
+- Manual edit: drag notes, change duration, delete/add, transpose
+- Chord symbol inference above staff (phase 2)
+- Handle rests, ties, tuplets, grace notes
+- Multi-staff output when source has clear bass + melody separation
+
+### Stage 4: Instrument Simulation
+- MIDI playback engine (FluidSynth + SoundFont2)
+- Built-in instrument library: piano, guitar, violin, flute, brass, synth pads, drums/percussion
+- Per-track instrument assignment (melody on violin, bass on cello, etc.)
+- Mixer: volume, pan, mute, solo per track
+- Reverb + EQ presets per instrument
+- Real-time playback scrubbing synced to notation cursor
+- Loop section for practice
+- Tempo override without re-transcribing (time-stretch playback)
+- Export rendered audio: WAV, MP3, FLAC
+
+### Stage 5: Export & Share
+- Combined project file (.mtnc or similar): audio ref, subtitles, MIDI, edits, settings
+- Sheet music export: PDF, MusicXML, MIDI
+- Subtitle export: SRT, VTT
+- Audio export: mixed render or per-stem
+- Copy-to-clipboard for notation snippet (image)
+
+--------------------------------------------------------------------------------
+## User Interface
+--------------------------------------------------------------------------------
+
+### Layout (single-window, tabbed or split-pane)
+```
+┌─────────────────────────────────────────────────────────────┐
+│  Menu / Toolbar: Import · Process · Play · Export · Settings│
+├──────────────┬──────────────────────────────────────────────┤
+│  File list   │  Waveform + subtitle track (synced scrubber) │
+│  + projects  ├──────────────────────────────────────────────┤
+│              │  [Transcript] [Sheet Music] [Piano Roll]     │
+│              │         (tabbed editor views)                │
+├──────────────┴──────────────────────────────────────────────┤
+│  Transport: ▶ ⏸ ⏹  |  BPM  |  Loop  |  Instrument mixer   │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### UI Requirements
+- Modern flat design, dark + light theme
+- Smooth animations (loading progress, tab transitions)
+- Non-blocking background processing with cancel support
+- Progress indicators per pipeline stage
+- Toast notifications for completion/errors
+- Keyboard shortcuts (Space=play, Ctrl+O=open, Ctrl+S=save project)
+- Responsive split-pane resizing
+- HiDPI / fractional scaling support on Windows 11
+
+--------------------------------------------------------------------------------
+## Additional Features (Recommended)
+--------------------------------------------------------------------------------
+
+### Audio Intelligence
+- Source separation (Demucs/Spleeter): isolate vocals, drums, bass, other
+  → run notation on isolated stems for cleaner output
+- Hum/single-instrument mode: optimized pipeline for monophonic input
+- Noise reduction pre-pass for noisy recordings
+
+### Music Theory & Editing
+- Transpose entire score ±N semitones
+- Time signature / key signature manual correction
+- Snap-to-scale helper when editing notes
+- Metronome click during playback
+- A-B loop markers for practice
+- Slow-down playback (50%, 75%) without pitch shift
+
+### Workflow
+- Batch queue: process multiple files overnight
+- Recent files + project history
+- Undo/redo in notation + subtitle editors
+- Auto-save project drafts
+- Compare before/after when user edits notation
+
+### Quality & Trust
+- Confidence heatmap on notation (low-confidence notes highlighted)
+- Side-by-side: original audio waveform under generated notes
+- Re-process single stage without redoing entire pipeline
+- Model quality presets: Fast (tiny Whisper, coarse pitch) vs Accurate (large models)
+
+### Accessibility
+- Screen reader labels on controls
+- Adjustable font size in transcript + notation
+- High-contrast theme option
+
+--------------------------------------------------------------------------------
+## Technical Architecture (Proposed)
+--------------------------------------------------------------------------------
+
+### Stack
+| Layer          | Choice                          | Rationale                          |
+|----------------|---------------------------------|------------------------------------|
+| UI Framework   | PySide6 (Qt6)                   | Native Windows feel, GPU-accelerated |
+| Audio I/O      | soundfile, pydub, librosa       | Load/decode all common formats     |
+| Waveform UI    | pyqtgraph or custom Qt widget   | Fast scrolling waveform            |
+| Speech-to-Text | faster-whisper                  | Offline, GPU/CPU, word timestamps  |
+| Audio-to-MIDI  | basic-pitch (Spotify)           | Strong polyphonic pitch tracking   |
+| Notation       | music21 + custom Qt MusicXML    | Parse, edit, export sheet music    |
+| Sheet display  | Verovio (WASM/native) or MuseScore embed | Renders MusicXML accurately |
+| MIDI playback  | fluidsynth + pygame/mido        | SoundFont-based instrument sim     |
+| Separation     | demucs (optional phase 2)       | Stem isolation for cleaner MIDI    |
+| Packaging      | PyInstaller + Inno Setup        | Single .exe installer for Windows  |
+
+### Processing Model
+- Worker threads / QThread per heavy stage; UI stays responsive
+- Pipeline orchestrator with stage status + intermediate artifact cache
+- Intermediate artifacts: normalized WAV, JSON transcript, MIDI, MusicXML
+- Re-run downstream only when upstream output changes
+
+### Data Model (project file)
+```json
+{
+  "version": 1,
+  "source_audio": "path/to/file.mp3",
+  "settings": { "whisper_model": "medium", "quantization": 0.7 },
+  "transcript": { "cues": [...] },
+  "midi": "embedded or path",
+  "musicxml": "...",
+  "edits": { "notation_overrides": [...] },
+  "mixer": { "tracks": [...] }
+}
+```
+
+--------------------------------------------------------------------------------
+## Development Phases
+--------------------------------------------------------------------------------
+
+### Phase 1 — MVP (4–6 weeks)
+- [ ] App shell: import audio, waveform display, transport controls
+- [ ] Whisper transcription → subtitle list synced to timeline
+- [ ] Basic Pitch → MIDI → simple piano-roll view
+- [ ] FluidSynth piano playback of generated MIDI
+- [ ] Export: SRT, MIDI, WAV render
+- [ ] Single dark theme, progress UI
+
+### Phase 2 — Notation & Editing (3–4 weeks)
+- [ ] Staff notation renderer (MusicXML via Verovio)
+- [ ] Piano roll + staff sync selection
+- [ ] Note editing: move, resize, delete, add
+- [ ] Quantization + key/tempo detection
+- [ ] Multi-instrument SoundFont mixer
+- [ ] PDF + MusicXML export
+
+### Phase 3 — Polish & Power Features (3–4 weeks)
+- [ ] Source separation pre-pass
+- [ ] Subtitle editor with word-level timing
+- [ ] Project save/load, batch queue
+- [ ] Light theme, settings panel, model presets
+- [ ] Confidence highlighting, loop/slow-down practice mode
+
+### Phase 4 — Advanced (backlog)
+- [ ] Speaker diarization
+- [ ] Chord symbols
+- [ ] Optional cloud sync / account (only if requested)
+- [ ] VST plugin support for instruments
+- [ ] Real-time mic input → live notation (performance mode)
+
+--------------------------------------------------------------------------------
+## Known Challenges & Mitigations
+--------------------------------------------------------------------------------
+
+| Challenge                         | Mitigation                                      |
+|-----------------------------------|-------------------------------------------------|
+| Polyphonic dense mixes → messy MIDI | Stem separation first; default to melody track |
+| Lyrics ≠ melody (singing)         | Separate STT stream from pitch stream           |
+| Large Whisper models slow on CPU  | Model size selector; GPU via CUDA/cuDNN         |
+| Notation from imperfect MIDI      | Quantize + editable UI; show confidence         |
+| Installer size (models + fonts)   | Download models on first run; bundle core only    |
+| Copyright / licensing             | User owns input; no content upload; local only    |
+
+--------------------------------------------------------------------------------
+## System Requirements (Target)
+--------------------------------------------------------------------------------
+- OS: Windows 10/11 (64-bit)
+- RAM: 8 GB min, 16 GB recommended (large Whisper model)
+- GPU: Optional NVIDIA CUDA for 3–5× faster STT + separation
+- Disk: ~2 GB for app + models (after first-run download)
+- Audio: standard Windows audio output; ASIO optional later
+
+--------------------------------------------------------------------------------
+## Success Criteria
+--------------------------------------------------------------------------------
+1. User drops an MP3 → sees synced subtitles within reasonable time
+2. Same file → readable sheet music (at least melody) with playable instruments
+3. User can correct notation + subtitles and re-export without re-processing audio
+4. Entire workflow works offline after initial model download
+5. UI feels modern: no frozen window during processing, clear progress feedback
+
+--------------------------------------------------------------------------------
+## Open Questions (for user)
+--------------------------------------------------------------------------------
+- Primary use case: songs with vocals, or instrumental only?
+- Notation target: full polyphonic score or lead-sheet melody + chords?
+- Acceptable install size vs first-run model download?
+- GPU available on target machines?
+- Need real-time mic input, or file-based only for v1?
+
+================================================================================
+END EXPANDED PLAN
+================================================================================

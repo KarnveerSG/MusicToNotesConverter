@@ -23,6 +23,8 @@ from PySide6.QtWidgets import (
 )
 
 from mtnc.audio.loader import load_audio
+from mtnc.branding import app_icon
+from mtnc.paths import temp_file
 from mtnc.export.exporters import cues_to_srt, notes_to_midi_file, write_midi_copy
 from mtnc.instruments import get_instrument
 from mtnc.models import ProcessingResult
@@ -36,7 +38,7 @@ from mtnc.ui.piano_roll_view import PianoRollView
 from mtnc.ui.settings_panel import SettingsPanel
 from mtnc.ui.staff_view import StaffView
 from mtnc.ui.subtitle_view import SubtitleView
-from mtnc.ui.virtual_keyboard import VirtualKeyboard
+from mtnc.ui.virtual_keyboard import PianoKeyboardPanel
 from mtnc.ui.waveform_view import WaveformView
 
 AUDIO_EXTS = {".mp3", ".wav", ".flac", ".ogg", ".m4a", ".aac"}
@@ -46,6 +48,7 @@ class MainWindow(QMainWindow):
     def __init__(self) -> None:
         super().__init__()
         self.setWindowTitle("Music To Notes")
+        self.setWindowIcon(app_icon())
         self.resize(1360, 900)
 
         self._settings = AppSettings.load()
@@ -69,7 +72,8 @@ class MainWindow(QMainWindow):
         self._subtitles = SubtitleView()
         self._piano_roll = PianoRollView()
         self._staff = StaffView()
-        self._virtual_kb = VirtualKeyboard()
+        self._piano_kb = PianoKeyboardPanel()
+        self._virtual_kb = self._piano_kb.keyboard
         self._settings_panel = SettingsPanel(self._settings)
         self._settings_panel.settings_changed.connect(self._on_settings_changed)
 
@@ -176,10 +180,10 @@ class MainWindow(QMainWindow):
         tabs.addTab(self._subtitles, "Transcript")
         layout.addWidget(tabs, stretch=3)
 
-        kb_label = QLabel("Virtual Instrument — click keys or use QWERTY")
+        kb_label = QLabel("88-key piano — scroll horizontally · QWERTY for live play")
         kb_label.setObjectName("meta")
         layout.addWidget(kb_label)
-        layout.addWidget(self._virtual_kb)
+        layout.addWidget(self._piano_kb)
 
         splitter = QSplitter()
         splitter.addWidget(center)
@@ -276,10 +280,8 @@ class MainWindow(QMainWindow):
     def _regenerate_midi(self) -> None:
         if not self._result or not self._result.notes:
             return
-        import tempfile
-
         inst = get_instrument(self._settings.instrument_id)
-        out = Path(tempfile.gettempdir()) / f"mtnc_{self._audio_path.stem}.mid"
+        out = temp_file(f"{self._audio_path.stem}.mid")
         notes_to_midi_file(self._result.notes, out, program=inst.midi_program)
         self._result.midi_path = out
 
@@ -377,9 +379,7 @@ class MainWindow(QMainWindow):
     def _play_midi(self) -> None:
         if not self._result or not self._result.midi_path:
             return
-        import tempfile
-
-        temp_wav = Path(tempfile.gettempdir()) / "mtnc_preview.wav"
+        temp_wav = temp_file("preview.wav")
         try:
             render_midi_to_wav(self._result.midi_path, temp_wav, self._soundfont)
         except Exception as exc:

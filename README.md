@@ -12,7 +12,7 @@ Windows desktop app: drag-drop audio → sheet music, piano roll, virtual instru
 - **Playback sync** — keys highlight with playhead
 - Whisper transcription + librosa pYIN pitch → MIDI
 - Export SRT, VTT, MIDI, rendered WAV
-- Settings persist to `~/.mtnc/settings.json`
+- Settings, cache, models, temp → `%APPDATA%\MusicToNotes`
 
 ## Setup
 
@@ -40,7 +40,9 @@ pip install pyinstaller
 python scripts/build.py
 ```
 
-Output: `dist/MusicToNotes/MusicToNotes.exe`
+Output: `dist/MusicToNotes.exe` (single file — copy only the `.exe` to Desktop or anywhere)
+
+Runtime data (settings, Whisper models, temp audio) stored in `%APPDATA%\MusicToNotes`.
 
 ## Keyboard
 

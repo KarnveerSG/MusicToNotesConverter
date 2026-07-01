@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import tempfile
 from pathlib import Path
 
 import librosa
@@ -8,6 +7,7 @@ import numpy as np
 
 from mtnc.export.exporters import notes_to_midi_file
 from mtnc.models import NoteEvent
+from mtnc.paths import temp_file
 
 
 def detect_notes(
@@ -30,7 +30,7 @@ def detect_notes(
     times = librosa.times_like(f0, sr=sr)
     notes = _f0_to_notes(f0, voiced_flag, times)
 
-    out = Path(tempfile.gettempdir()) / f"mtnc_{wav_path.stem}.mid"
+    out = temp_file(f"{wav_path.stem}.mid")
     notes_to_midi_file(notes, out, program=midi_program)
     return notes, out
 

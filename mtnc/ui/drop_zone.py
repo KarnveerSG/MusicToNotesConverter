@@ -4,7 +4,19 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QDragEnterEvent, QDropEvent, QPainter, QPen
 from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget
 
+from mtnc.branding import paint_logo
 from mtnc.ui.theme import COLORS
+
+
+class LogoWidget(QWidget):
+    def __init__(self, size: int = 96, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self._size = size
+        self.setFixedSize(size, size)
+
+    def paintEvent(self, _event) -> None:
+        painter = QPainter(self)
+        paint_logo(painter, self.rect(), large=True)
 
 
 class DropZoneOverlay(QWidget):
@@ -16,9 +28,7 @@ class DropZoneOverlay(QWidget):
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         layout = QVBoxLayout(self)
         layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        icon = QLabel("🎵")
-        icon.setStyleSheet("font-size: 48pt;")
-        icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(LogoWidget(112), alignment=Qt.AlignmentFlag.AlignCenter)
         title = QLabel("Drop audio here")
         title.setObjectName("dropTitle")
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -28,7 +38,6 @@ class DropZoneOverlay(QWidget):
         sub = QLabel("or use File → Open Audio (Ctrl+O)")
         sub.setObjectName("meta")
         sub.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        layout.addWidget(icon)
         layout.addWidget(title)
         layout.addWidget(hint)
         layout.addWidget(sub)

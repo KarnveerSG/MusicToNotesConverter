@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import tempfile
 from pathlib import Path
 
 import librosa
@@ -8,6 +7,7 @@ import numpy as np
 import soundfile as sf
 
 from mtnc.models import AudioMetadata
+from mtnc.paths import temp_file
 
 
 def load_audio(path: Path, target_sr: int = 22050) -> AudioMetadata:
@@ -24,7 +24,7 @@ def load_audio(path: Path, target_sr: int = 22050) -> AudioMetadata:
 
 
 def write_normalized_wav(audio: AudioMetadata) -> Path:
-    out = Path(tempfile.gettempdir()) / f"mtnc_{audio.path.stem}_norm.wav"
+    out = temp_file(f"{audio.path.stem}_norm.wav")
     sf.write(str(out), audio.samples, audio.sample_rate)
     return out
 

@@ -85,7 +85,9 @@ def _transcribe(
 ) -> tuple[list[SubtitleCue], str | None]:
     from faster_whisper import WhisperModel
 
-    model = WhisperModel(model_size, device="cpu", compute_type="int8")
+    from mtnc.paths import models_dir
+
+    model = WhisperModel(model_size, device="cpu", compute_type="int8", download_root=str(models_dir()))
     segments, info = model.transcribe(
         str(wav_path),
         word_timestamps=True,

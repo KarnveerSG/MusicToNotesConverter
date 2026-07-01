@@ -7,6 +7,7 @@ from pathlib import Path
 import numpy as np
 
 from mtnc.instruments import get_instrument
+from mtnc.paths import temp_file
 from mtnc.playback.midi_player import _resolve_soundfont
 
 
@@ -51,9 +52,9 @@ class KeyboardSynth:
 
             inst = get_instrument(self._instrument_id)
             note = NoteEvent(start=0.0, end=0.35, pitch=pitch, velocity=velocity)
-            tmp_mid = Path(tempfile.gettempdir()) / f"mtnc_kb_{pitch}.mid"
+            tmp_mid = temp_file(f"kb_{pitch}.mid")
             notes_to_midi_file([note], tmp_mid, program=inst.midi_program)
-            tmp_wav = Path(tempfile.gettempdir()) / f"mtnc_kb_{pitch}.wav"
+            tmp_wav = temp_file(f"kb_{pitch}.wav")
             sf = _resolve_soundfont(self._soundfont)
             render_midi_to_wav(tmp_mid, tmp_wav, sf)
             self._play_wav(tmp_wav)
@@ -84,7 +85,7 @@ class KeyboardSynth:
             t = np.linspace(0, 0.25, int(sr * 0.25), endpoint=False)
             freq = 440.0 * (2.0 ** ((pitch - 69) / 12.0))
             wave = 0.3 * np.sin(2 * np.pi * freq * t) * np.exp(-t * 8)
-            tmp = Path(tempfile.gettempdir()) / f"mtnc_beep_{pitch}.wav"
+            tmp = temp_file(f"beep_{pitch}.wav")
             sf.write(str(tmp), wave.astype(np.float32), sr)
             self._play_wav(tmp)
         except Exception:

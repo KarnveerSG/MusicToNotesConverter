@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import json
-from dataclasses import asdict, dataclass, field, fields
-from pathlib import Path
+from dataclasses import asdict, dataclass, fields
+
+from mtnc.paths import migrate_legacy_settings, settings_path
 
 
 @dataclass
@@ -16,10 +17,9 @@ class AppSettings:
     accent_color: str = "#7c9cff"
 
     @classmethod
-    def config_path(cls) -> Path:
-        base = Path.home() / ".mtnc"
-        base.mkdir(parents=True, exist_ok=True)
-        return base / "settings.json"
+    def config_path(cls):
+        migrate_legacy_settings()
+        return settings_path()
 
     def save(self) -> None:
         self.config_path().write_text(json.dumps(asdict(self), indent=2), encoding="utf-8")

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QColor, QFont, QPainter, QPen
+from PySide6.QtGui import QColor, QFont, QPainter, QPainterPath, QPen
 from PySide6.QtWidgets import QVBoxLayout, QWidget
 
 from mtnc.models import NoteEvent
@@ -46,9 +46,7 @@ class StaffView(QWidget):
             y = staff_top + i * line_gap
             painter.drawLine(margin_l, y, w - margin_r, y)
 
-        painter.setPen(QColor(COLORS["text"]))
-        painter.setFont(QFont("Segoe UI Symbol", 28))
-        painter.drawText(8, staff_top + 4 * line_gap + 8, "𝄞")
+        self._draw_treble_clef(painter, margin_l - 6, staff_top, line_gap)
 
         note_pen = QPen(QColor(COLORS["note_border"]))
         note_brush = QColor(COLORS["note"])
@@ -76,3 +74,16 @@ class StaffView(QWidget):
                 h - 8,
                 f"{len(self._notes)} notes · {midi_to_name(last.pitch)} …",
             )
+
+    def _draw_treble_clef(self, painter: QPainter, x: int, staff_top: int, gap: int) -> None:
+        pen = QPen(QColor(COLORS["accent"]), 2.2)
+        painter.setPen(pen)
+        painter.setBrush(Qt.BrushStyle.NoBrush)
+        path = QPainterPath()
+        cx = x + 14
+        cy = staff_top + gap * 2
+        path.moveTo(cx, staff_top - gap)
+        path.cubicTo(cx - 18, staff_top + gap, cx + 10, staff_top + gap * 3.2, cx, staff_top + gap * 4.2)
+        path.cubicTo(cx - 8, staff_top + gap * 2.2, cx + 6, staff_top + gap * 0.8, cx + 2, staff_top - gap * 0.2)
+        painter.drawPath(path)
+        painter.drawArc(cx - 5, staff_top + gap * 3, 12, 10, 30 * 16, 120 * 16)

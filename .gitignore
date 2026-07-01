@@ -17,6 +17,8 @@ build/
 .cache/
 models/
 *.sf2
+mtnc/assets/app_icon.png
+mtnc/assets/app_icon.ico
 .quill/
 .codegraph/
 .sexyjarvis/
