@@ -61,3 +61,7 @@ PySide6, pyqtgraph, librosa, faster-whisper, pretty-midi
 
 - Windows 10/11, Python 3.11+
 - 8 GB RAM (16 GB recommended)
+  
+## Screenshot
+
+<img width="1690" height="1157" alt="image" src="https://github.com/user-attachments/assets/3bd409d7-579b-4c24-9b37-7e0215058015" />
